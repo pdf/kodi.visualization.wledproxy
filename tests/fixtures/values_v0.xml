@@ -1,0 +1,5 @@
+<settings>
+    <setting id="enabled" value="false" />
+    <setting id="count" value="7" />
+    <setting id="name" value="a &lt;b&gt; c" />
+</settings>

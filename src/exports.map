@@ -1,0 +1,8 @@
+{
+  global:
+    ADDON_Create;
+    ADDON_GetTypeVersion;
+    ADDON_GetTypeMinVersion;
+  local:
+    *;
+};

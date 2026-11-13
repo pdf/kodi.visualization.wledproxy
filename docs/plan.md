@@ -4,7 +4,7 @@
 
 `visualization.wledproxy` is a Kodi visualization add-on that loads any other installed visualization (projectM by default) and passes everything through to it unchanged. On the way through, it taps the audio samples, analyses them the way WLED's audio-reactive firmware does, and sends WLED "audio sync" packets over UDP. The add-on knows nothing about what consumes the packets. Using WLED's format means WLED devices can react directly, and anything else can decode a documented 44-byte packet.
 
-The first consumer is a Home Assistant custom integration that drives Matter lights and a Hyperion.NG ambilight (WS2801 strip behind an Adalight Arduino) while Kodi plays music. It lives in its own repository and installs through HACS.
+The first consumer is a Home Assistant custom integration, "WLED Audio-Reactive Receiver", that drives Matter lights and a Hyperion.NG ambilight (WS2801 strip behind an Adalight Arduino) while Kodi plays music. It knows nothing about Kodi: it receives WLED audio sync packets from any sender and can be gated on any media player. It lives in its own repository and installs through HACS.
 
 Constraints carried over from the brief: music only, no extra hardware, Kodi's audio output path is not touched, one solution.
 
@@ -18,14 +18,15 @@ Constraints carried over from the brief: music only, no extra hardware, Kodi's a
 
 ## Facts established
 
-All Kodi references are to the Piers branch. CoreELEC 22 builds Kodi from `CoreELEC/xbmc` commit `d4ea7ceb56a21609f7be8614921a468fa12ba0c6`; its `versions.h`, `c-api/addon_base.h`, `c-api/addon-instance/visualization.h` and `c-api/filesystem.h` are byte-identical to upstream Piers. WLED references are to `MoonModules/WLED-AudioReactive-Usermod` (`audio_reactive.h`, branch `main`), the "Audioreactive V2" usermod that WLED is moving to; the in-tree `wled/WLED` `usermods/audioreactive_v1` is marked deprecated.
+All Kodi references are to the Piers branch. CoreELEC 22 builds Kodi from upstream `xbmc/xbmc` release tags, for stable and nightly builds alike: `22.0rc1-Piers` for CoreELEC 22.0-Piers_rc1, `22.0rc2-Piers` for 22.0-Piers_rc2 and the current `coreelec-22` nightlies (`packages/mediacenter/kodi/package.mk`). Which build a box runs is the owner's choice, so the add-on must not depend on one. WLED references are to `MoonModules/WLED-AudioReactive-Usermod` (`audio_reactive.h`, branch `main`), the "Audioreactive V2" usermod that WLED is moving to; the in-tree `wled/WLED` `usermods/audioreactive_v1` is marked deprecated.
 
 | Topic | Fact | Source |
 |---|---|---|
 | Architecture | CoreELEC 22 ships only `Amlogic-no.aarch64` images: 64-bit userspace | CoreELEC 22.0-Piers_rc2 release assets |
 | Box libraries | glibc 2.44, GCC 16.2 (libstdc++) | `CoreELEC` branch `coreelec-22`, `packages/devel/glibc`, `packages/lang/gcc` |
 | projectM | CoreELEC packages `visualization.projectm` 22.3.2-Piers rev 1, matching the installed 22.3.2.1 | `packages/mediacenter/kodi-binary-addons/visualization.projectm/package.mk` |
-| API versions | main 2.0.4, general 1.0.6, gui 5.15.1, filesystem 1.1.11, instance visualization 5.0.0 | `kodi-dev-kit/include/kodi/versions.h` |
+| API versions | `22.0rc2-Piers`: main 2.0.4 (min 2.0.3), general 1.0.6 (min 1.0.4), gui 5.15.1 (min 5.15.0), filesystem 1.1.11, instance visualization 5.0.0. `22.0rc1-Piers`: main 2.0.3, general 1.0.5, the rest the same | `kodi-dev-kit/include/kodi/versions.h` at each tag |
+| Dependency check | Enabling an add-on needs, for each `kodi.*` import, `minversion <= installed version` and `version >= installed abi`; without `minversion`, `version` is the minimum. Kodi's own binary add-ons (projectM) declare `minversion` = the headers' `_MIN` | `addons/AddonManager.cpp:1141-1159`, `addons/addoninfo/AddonInfo.cpp:221-224` |
 | Library loading | Kodi loads add-on libraries with `RTLD_LAZY` (local scope) and unloads them when the add-on is destroyed | `cores/DllLoader/SoLoader.cpp:111`, `addons/binary-addons/AddonDll.cpp:230` |
 | Library lifetime | The add-on library is created when the first instance is needed and destroyed when the last one is released, so every opening of the visualization runs `ADDON_Create` again | `addons/binary-addons/BinaryAddonBase.cpp:35-64` |
 | Base calls | Kodi calls every base function with its own struct's `addonBase` handle | `AddonDll.cpp:202, 271, 289, 411-488` |
@@ -56,7 +57,7 @@ All Kodi references are to the Piers branch. CoreELEC 22 builds Kodi from `CoreE
 
 1. `visualization.wledproxy`: the Kodi add-on (C++ shared library plus add-on files), in `src/` and `addon/`.
 2. `docs/wled-sync.md`: how the proxy fills each field of WLED's audio sync packet, with a link to WLED's definition.
-3. `kodi_audio_lights`: the first consumer, a Home Assistant custom integration (Python) that drives lights and Hyperion. It lives in its own repository, `pdf/ha-kodi-audio-lights`, and installs through HACS.
+3. `wled_audio_receiver`: the first consumer, a Home Assistant custom integration (Python) that receives WLED audio sync packets from any sender and drives lights and Hyperion. It lives in its own repository, `pdf/ha-wled-audio-receiver`, and installs through HACS.
 4. `tools/recv_sync.py`: a small receiver that joins the multicast group and prints decoded packets, for checking the stream from any host.
 
 ## 1. Kodi add-on
@@ -73,7 +74,7 @@ visualization.wledproxy/
     lib/configure_target.py
 ```
 
-`addon.xml`: extension point `xbmc.player.musicviz`, `library_linux="visualization.wledproxy.so"`, imports `kodi.binary.global.main` 2.0.4, `kodi.binary.global.general` 1.0.6, `kodi.binary.global.filesystem` 1.1.11 and `kodi.binary.instance.visualization` 5.0.0.
+`addon.xml`: extension point `xbmc.player.musicviz`, `library_linux="visualization.wledproxy.so"`, imports `kodi.binary.global.main`, `kodi.binary.global.general`, `kodi.binary.global.filesystem` and `kodi.binary.instance.visualization`, each with `version` and `minversion` generated from the headers' `versions.h` (with `22.0rc2-Piers`: 2.0.3-2.0.4, 1.0.4-1.0.6, 1.1.11, 5.0.0), so one package runs on every Piers build from RC1 on.
 
 ### Settings
 
@@ -189,12 +190,14 @@ HACS's rules for integrations (`hacs/documentation`, `source/docs/publish/start.
 - **Versions:** HACS takes the integration's version from the repository's latest GitHub release. Here every Kodi add-on release would show up in Home Assistant as an integration update, and an integration fix would need a Kodi release tag.
 - **Repository metadata:** HACS shows the repository's description, topics and README, which here describe the Kodi add-on.
 
-Decision: a new public repository, `pdf/ha-kodi-audio-lights`, with its own releases. It refers to `docs/wled-sync.md` in this repository for the packet format.
+Decision: a new public repository, `pdf/ha-wled-audio-receiver`, with its own releases. It refers to `docs/wled-sync.md` in this repository for the packet format.
+
+The integration is generic: any WLED audio sync V2 sender works (this proxy, a WLED controller with a microphone or line-in, other software), and gating takes any `media_player` entity. Kodi appears only in the README, as one example source. The domain `wled_audio_receiver` is distinct from Home Assistant's built-in `wled` integration, and the README states that this is an unofficial receiver for WLED's audio sync protocol, not part of the WLED project.
 
 ### Repository layout
 
 ```
-custom_components/kodi_audio_lights/
+custom_components/wled_audio_receiver/
   __init__.py
   manifest.json
   config_flow.py
@@ -218,13 +221,13 @@ LICENSE (MIT, as here)
 - `manifest.json`: `domain`, `name`, `version`, `documentation`, `issue_tracker`, `codeowners` (all required by HACS), plus `config_flow: true`, `iot_class: local_push` and `integration_type: service`. No extra Python requirements: the Hyperion JSON API is spoken directly over `asyncio` TCP.
 - `hacs.json`: `name` and `homeassistant` (minimum version, set to the Home Assistant version the tests run against). Not `zip_release`: HACS downloads the folder from the release tag.
 - `brand/icon.png`: HACS requires brand assets in the integration folder or in `home-assistant/brands`; shipping them in the folder avoids a PR to that repository.
-- GitHub metadata HACS requires: a description, topics (`home-assistant`, `hacs`, `kodi`, `wled`, `hyperion`, `homeassistant-integration`) and issues enabled.
+- GitHub metadata HACS requires: a description, topics (`home-assistant`, `hacs`, `wled`, `audio-reactive`, `hyperion`, `homeassistant-integration`) and issues enabled.
 
 ### Set-up in the Home Assistant UI
 
 Config flow, so neither installing nor configuring touches files on the Home Assistant host. Options flow with the same fields; the integration reloads when they change.
 
-- **Input:** UDP port (default 11988); join multicast group 239.0.0.1 (default on); source address filter, filled in from the selected media player's Kodi config entry when there is one.
+- **Input:** UDP port (default 11988); join multicast group 239.0.0.1 (default on); sender IP address filter (optional, empty accepts any sender).
 - **Gating:** media player (optional `media_player` entity selector).
 - **Lights:** light entities (multiple, `light` domain), minimum and maximum brightness, update rate (default 3 per second), restore lights afterwards (default off).
 - **Hyperion:** on/off, host, port (default 19444), priority (default 150).
@@ -239,7 +242,7 @@ The integration drives outputs only while all of these hold:
 2. the selected media player is `playing` (skipped if none is selected);
 3. a valid packet arrived in the last 1 s.
 
-Condition 2 comes from a state-change listener on the media player, which Home Assistant's Kodi integration updates from Kodi's pushed player events. Pause and stop end the active state as soon as Home Assistant sees them, the same moment the owner's own player-state automations run. Condition 3 only covers leaving the visualization screen while music keeps playing.
+Condition 2 comes from a state-change listener on the media player. Pause and stop end the active state as soon as Home Assistant sees them, the same moment the owner's own player-state automations run. With Kodi that is immediate, because Home Assistant's Kodi integration updates from Kodi's pushed player events; a polling media player integration reacts after its polling delay. Condition 3 covers a sender that stops while the player keeps playing (for this proxy: leaving the visualization screen), and every case where no media player is selected.
 
 When the active state ends: pending light commands are cancelled, Hyperion's priority is cleared, and nothing else changes unless "restore lights afterwards" is on. Light state before and after music stays with the owner's automations. A command already sent can still land up to about 300 ms after an automation's own command; the bulb then ends in the automation's state, because a new command replaces a running transition.
 
@@ -262,7 +265,7 @@ When the active state ends: pending light commands are cancelled, Hyperion's pri
 ### Hyperion output
 
 - One persistent TCP connection to the Hyperion JSON API, reconnecting with backoff. Replies are read and discarded.
-- For every packet while active, send an `image` command: 16x9 pixels, `priority` as configured, `origin` "Kodi Audio Lights", `duration` 500 ms. If the previous write hasn't drained, that frame is skipped.
+- For every packet while active, send an `image` command: 16x9 pixels, `priority` as configured, `origin` "WLED Audio-Reactive Receiver", `duration` 500 ms. If the previous write hasn't drained, that frame is skipped.
 - Picture: the 16 channels run along the image's border from bottom centre (channel 0) up both sides to top centre (channel 15), mirrored left and right. Each channel's hue steps from red to violet, and its brightness is its `fftResult` value. Interior pixels take the colour of the nearest border pixel. Hyperion maps the image onto the LED layout, so the integration needs no layout of its own.
 - When the active state ends, send `clear` for the priority. The 500 ms `duration` also makes Hyperion fall back to its capture by itself if Home Assistant stops.
 - Priority 150 is above Hyperion's capture (230-250), so music replaces the screen picture, and below Home Assistant's Hyperion integration (128), so a colour set by hand still wins.
@@ -274,9 +277,9 @@ When the active state ends: pending light commands are cancelled, Hyperion's pri
 
 ### Install for users
 
-1. HACS > three-dot menu > Custom repositories: add `https://github.com/pdf/ha-kodi-audio-lights`, type Integration.
-2. Download "Kodi Audio Lights" in HACS and restart Home Assistant.
-3. Settings > Devices & services > Add integration > Kodi Audio Lights.
+1. HACS > three-dot menu > Custom repositories: add `https://github.com/pdf/ha-wled-audio-receiver`, type Integration.
+2. Download "WLED Audio-Reactive Receiver" in HACS and restart Home Assistant.
+3. Settings > Devices & services > Add integration > WLED Audio-Reactive Receiver.
 
 The README also carries a my.home-assistant.io link that opens step 1 with the repository filled in. After that, HACS offers updates like any other integration.
 
@@ -284,7 +287,7 @@ The integration is distributed as a HACS custom repository only; it is not submi
 
 ## Build
 
-- Headers: `xbmc/addons/kodi-dev-kit/include` from `CoreELEC/xbmc` at `d4ea7ceb56a21609f7be8614921a468fa12ba0c6`, fetched by CMake at configure time.
+- Headers: `xbmc/addons/kodi-dev-kit/include` from upstream `xbmc/xbmc` at tag `22.0rc2-Piers` (`d686683a55d50e576dd282f53fb2bf9914931b38`), fetched by CMake at configure time.
 - Toolchain: a `debian:trixie` container (glibc 2.41, GCC 14) with `g++-aarch64-linux-gnu`, run with Docker on the build host. Both libraries are older than the box's (glibc 2.44, GCC 16), so the result runs there.
 - CMake with a toolchain file for `aarch64-linux-gnu`; flags `-O2 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden`, version script for the three exports.
 - Post-build checks (scripted): `readelf --dyn-syms` shows only the three exports; the highest `GLIBC_` and `GLIBCXX_` versions required are at or below 2.41 and 3.4.33; `readelf -h` shows `AArch64`, ELF64.
@@ -311,7 +314,7 @@ Produced only after the on-box validation in the work order passes.
 </dir>
 ```
 
-- Kodi compares `minversion`/`maxversion` with its `xbmc.addon` version (`addons/Repository.cpp:104-117`). Piers and CoreELEC 22 report 21.90.902 (Omega was 21.3.0), so this range covers Piers pre-releases and every 22.x release, and stops before the next major. A future Kodi major gets its own `<dir>` and folder, because the binary API changes between majors.
+- Kodi compares `minversion`/`maxversion` with its `xbmc.addon` version (`addons/Repository.cpp:104-117`). Piers pre-releases report 21.90.9xx (RC1 21.90.901, RC2 21.90.902; Omega was 21.3.0), so this range covers Piers pre-releases and every 22.x release, and stops before the next major. A future Kodi major gets its own `<dir>` and folder, because the binary API changes between majors.
 - `checksum verify="sha256"`: Kodi checks the index's SHA-256 against the content of the checksum URL (`Repository.cpp:221-223`).
 - `hashes sha256`: Kodi verifies every downloaded zip, reading `<zip>.sha256` when the server doesn't send a `content-sha256` header (`Repository.cpp:57-85`). GitHub Pages doesn't, so each zip gets a `.sha256` file.
 
@@ -395,7 +398,7 @@ On the box and network, after the above pass: the install steps below, one at a 
    ```bash
    python3 tools/recv_sync.py
    ```
-6. Install the integration through HACS as in its "Install for users" steps (before its first release, choose the default branch in HACS's version picker), select the Kodi media player, the lights and the Hyperion host.
+6. Install the integration through HACS as in its "Install for users" steps (before its first release, choose the default branch in HACS's version picker), select the Kodi media player, the lights and the Hyperion host; optionally set the box's address as the sender filter.
 7. Check with the existing player-state automations: play, pause, resume and stop, and confirm the lights end in the automations' states and the ambilight returns to screen capture on pause.
 
 Troubleshooting starts from `/storage/.kodi/temp/kodi.log`; every proxy log line is prefixed `visualization.wledproxy:`.
@@ -408,6 +411,6 @@ Troubleshooting starts from `/storage/.kodi/temp/kodi.log`; every proxy log line
 4. Resampler, WLED analysis chain and sender with their tests; `docs/wled-sync.md`; `tools/recv_sync.py`.
 5. Add-on files (`addon.xml`, `settings.xml`, strings, configure script) and packaging (tar.gz and zip).
 6. On-box install over SSH and test with projectM (install steps 1-5); then with one other installed visualization.
-7. HA integration in `pdf/ha-kodi-audio-lights` (the owner creates the empty public repository): code, tests, both workflows, then install through HACS on the owner's Home Assistant (install steps 6-7).
+7. HA integration in `pdf/ha-wled-audio-receiver` (created, cloned at `/storage/pdf/workspace/ha-wled-audio-receiver/`): code, tests, both workflows, then install through HACS on the owner's Home Assistant (install steps 6-7).
 8. Repository add-on, `make_repo.py` with its tests, and the release workflow.
 9. Remove the SSH-installed copy from the box, then do the user install above from the published repository, to check the repository end to end.

@@ -1,0 +1,98 @@
+# Kodi Media Center language file
+# Addon id: visualization.wledproxy
+msgid ""
+msgstr ""
+"Project-Id-Version: visualization.wledproxy\n"
+"Report-Msgid-Bugs-To: https://github.com/pdf/kodi.visualization.wledproxy/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en_GB\n"
+
+msgctxt "#30000"
+msgid "General"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Visualization"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Configure visualization"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Send audio sync packets"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Destination"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Receiver address"
+msgstr ""
+
+msgctxt "#30006"
+msgid "UDP port"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Wrapped visualization"
+msgstr ""
+
+msgctxt "#30011"
+msgid "WLED audio sync"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Multicast (239.0.0.1)"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Broadcast"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Single receiver"
+msgstr ""
+
+msgctxt "#30051"
+msgid "The visualization shown on screen. Changes apply the next time the visualization opens."
+msgstr ""
+
+msgctxt "#30052"
+msgid "Saves these settings and opens the settings of the chosen visualization."
+msgstr ""
+
+msgctxt "#30053"
+msgid "Analyse the audio and send WLED audio sync packets while the visualization is on screen."
+msgstr ""
+
+msgctxt "#30054"
+msgid "Multicast reaches WLED devices with their default settings. Broadcast goes to the local subnet. Single receiver sends to one address."
+msgstr ""
+
+msgctxt "#30055"
+msgid "IPv4 address of the receiver."
+msgstr ""
+
+msgctxt "#30056"
+msgid "WLED listens on 11988 by default."
+msgstr ""
+
+msgctxt "#30100"
+msgid "Choose a visualization to wrap in the add-on settings"
+msgstr ""
+
+msgctxt "#30101"
+msgid "Can't load the wrapped visualization"
+msgstr ""
+
+msgctxt "#30102"
+msgid "Wrapped visualization uses an incompatible API"
+msgstr ""
+
+msgctxt "#30103"
+msgid "Can't send audio sync packets"
+msgstr ""

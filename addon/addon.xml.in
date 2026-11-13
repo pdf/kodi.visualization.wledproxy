@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon
+  id="@ADDON_ID@"
+  version="@ADDON_VERSION@"
+  name="WLED visualization proxy"
+  provider-name="Peter Fern">
+  <requires>
+    <import addon="kodi.binary.global.main" minversion="@KODI_GLOBAL_VERSION_MAIN_MIN@" version="@KODI_GLOBAL_VERSION_MAIN@"/>
+    <import addon="kodi.binary.global.general" minversion="@KODI_GLOBAL_VERSION_GENERAL_MIN@" version="@KODI_GLOBAL_VERSION_GENERAL@"/>
+    <import addon="kodi.binary.global.filesystem" minversion="@KODI_GLOBAL_VERSION_FILESYSTEM_MIN@" version="@KODI_GLOBAL_VERSION_FILESYSTEM@"/>
+    <import addon="kodi.binary.instance.visualization" minversion="@KODI_INSTANCE_VERSION_VISUALIZATION_MIN@" version="@KODI_INSTANCE_VERSION_VISUALIZATION@"/>
+  </requires>
+  <extension
+    point="xbmc.player.musicviz"
+    library_linux="@ADDON_ID@.so"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Runs another visualization and sends WLED audio sync packets</summary>
+    <description lang="en_GB">Loads another installed visualization (projectM by default) and passes everything through to it unchanged. On the way, it analyses the audio the way WLED's audio-reactive firmware does and sends WLED audio sync packets over UDP, so WLED devices and other receivers can react to the music. Packets flow only while the visualization is on screen.</description>
+    <platform>linux-aarch64</platform>
+    <license>MIT</license>
+    <source>https://github.com/pdf/kodi.visualization.wledproxy</source>
+  </extension>
+</addon>

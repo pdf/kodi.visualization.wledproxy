@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+  <category label="30000">
+    <setting label="30010" type="lsep"/>
+    <setting id="enabled" type="bool" label="30001" default="true"/>
+    <setting id="count" type="enum" label="30002" values="a|b|c" default="2"/>
+    <setting id="ratio" type="slider" label="30003" option="float" range="0,0.1,1" default="0.25"/>
+    <setting id="name" type="text" label="30004" default="it&apos;s"/>
+    <setting id="go" type="action" label="30006" action="RunScript(foo)"/>
+  </category>
+</settings>
