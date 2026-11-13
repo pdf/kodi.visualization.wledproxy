@@ -40,6 +40,8 @@ This builds and runs the tests natively in the container, then cross-builds for 
 
 The kodi-dev-kit headers come from upstream `xbmc/xbmc` at tag `22.0rc2-Piers`, the Kodi that CoreELEC 22 builds (stable and nightly), fetched by CMake at configure time (sparse checkout, a few megabytes). `addon.xml` declares their minimum API versions as `minversion`, so the add-on also runs on Piers 22.0 RC1 (tested on CoreELEC 22.0-RC1). The version lives in `CMakeLists.txt` (`project(... VERSION ...)`); `addon.xml` is generated from it.
 
+CI (`.github/workflows/ci.yml`) runs the same `tools/docker-build.sh all` on every push to `main` and every pull request, and keeps the aarch64 packages as build artifacts.
+
 Tests on the build machine itself, without Docker:
 
 ```bash
