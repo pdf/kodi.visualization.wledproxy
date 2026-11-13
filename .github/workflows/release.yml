@@ -1,0 +1,104 @@
+name: Release
+
+# A pushed tag v<version> builds, tests and publishes a GitHub release, then
+# rebuilds the Kodi repository on GitHub Pages from the zips of every
+# release. Run by hand (workflow_dispatch), it only rebuilds Pages.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  REPO_ID: repository.visualization.wledproxy
+
+jobs:
+  release:
+    name: Build and publish the release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag against the CMake version
+        run: |
+          version=$(sed -n 's/^project(visualization\.wledproxy VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match the CMake version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Refuse an existing release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::release $TAG already exists; published versions are never replaced"
+            exit 1
+          fi
+
+      - name: Build, test and package
+        run: tools/docker-build.sh all
+
+      - name: Package the repository add-on
+        run: |
+          repo_version=$(python3 -c 'import sys, xml.etree.ElementTree as E; print(E.parse(sys.argv[1]).getroot().get("version"))' "repo/$REPO_ID/addon.xml")
+          mkdir -p dist
+          python3 tools/make_package.py --stage repo --id "$REPO_ID" \
+            --out "dist/$REPO_ID-$repo_version" --zip-only
+          cp "build-aarch64/visualization.wledproxy-$VERSION.zip" \
+             "build-aarch64/visualization.wledproxy-$VERSION.tar.gz" dist/
+
+      - name: Download the zips of earlier releases
+        run: tools/release_zips.sh previous
+
+      - name: Check the Kodi repository builds
+        run: |
+          shopt -s nullglob
+          python3 tools/make_repo.py --out site-check previous/*/*.zip dist/*.zip
+
+      - name: Publish the GitHub release
+        run: gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes dist/*
+
+  pages:
+    name: Rebuild the Kodi repository on Pages
+    needs: release
+    if: always() && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the zips of every release
+        run: tools/release_zips.sh releases
+
+      - name: Build the Kodi repository
+        run: |
+          shopt -s nullglob
+          python3 tools/make_repo.py --out site releases/*/*.zip
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

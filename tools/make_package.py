@@ -82,11 +82,13 @@ def main():
     p.add_argument("--stage", required=True, help="folder containing <id>/")
     p.add_argument("--id", required=True, help="add-on ID")
     p.add_argument("--out", required=True, help="output path without extension")
+    p.add_argument("--zip-only", action="store_true", help="write only the .zip")
     a = p.parse_args()
     files = collect(a.stage, a.id)
-    write_tar(files, a.out + ".tar.gz")
+    if not a.zip_only:
+        write_tar(files, a.out + ".tar.gz")
+        print(a.out + ".tar.gz")
     write_zip(files, a.out + ".zip")
-    print(a.out + ".tar.gz")
     print(a.out + ".zip")
 
 
