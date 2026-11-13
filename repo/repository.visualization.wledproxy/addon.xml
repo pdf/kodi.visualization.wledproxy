@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon
+  id="repository.visualization.wledproxy"
+  version="1.0.0"
+  name="WLED visualization proxy repository"
+  provider-name="Peter Fern">
+  <extension point="xbmc.addon.repository" name="WLED visualization proxy repository">
+    <!-- Kodi 22 (Piers): pre-releases report 21.90.9xx, releases 22.x. -->
+    <dir minversion="21.90.0" maxversion="22.89.0">
+      <info>https://pdf.github.io/kodi.visualization.wledproxy/piers/addons.xml</info>
+      <checksum verify="sha256">https://pdf.github.io/kodi.visualization.wledproxy/piers/addons.xml.sha256</checksum>
+      <datadir>https://pdf.github.io/kodi.visualization.wledproxy/piers</datadir>
+      <hashes>sha256</hashes>
+    </dir>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Updates for the WLED visualization proxy</summary>
+    <description lang="en_GB">Installs and updates visualization.wledproxy, which runs another visualization and sends WLED audio sync packets.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+    <source>https://github.com/pdf/kodi.visualization.wledproxy</source>
+  </extension>
+</addon>

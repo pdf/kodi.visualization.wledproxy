@@ -37,3 +37,8 @@ if(Python3_FOUND)
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_package.py"
             "${CMAKE_BINARY_DIR}" "${ADDON_ID}" "${PROJECT_VERSION}")
 endif()
+
+if(Python3_FOUND)
+  add_test(NAME make_repo
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_make_repo.py")
+endif()

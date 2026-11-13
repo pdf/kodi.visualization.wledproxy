@@ -50,6 +50,19 @@ make test
 
 The tests cover the resampler and WLED chain (tones in the expected channels, silence, peak frequency, auto-gain), packet layout, the target settings store and `.po` reader against fixture files, packaging, and a loader harness that plays Kodi's part against the real library and a mock target. The multicast test skips itself on hosts whose firewall drops looped-back multicast; it runs in the container.
 
+## Releasing
+
+Releases go out as a GitHub release and as a Kodi repository on GitHub Pages (`https://pdf.github.io/kodi.visualization.wledproxy/`). Users install `repository.visualization.wledproxy.zip` from there once, and Kodi then offers updates.
+
+1. Set the new version in `CMakeLists.txt` (`project(... VERSION ...)`). If `repo/repository.visualization.wledproxy/addon.xml` changed, bump its version too.
+2. Merge, then tag the merge commit and push the tag:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+`.github/workflows/release.yml` checks the tag against the CMake version, builds and tests in the container, publishes the GitHub release with the zip, tar.gz and repository zip, and rebuilds Pages from the zips of every release (`tools/release_zips.sh`, `tools/make_repo.py`), so old versions stay available for rollback. Running the workflow by hand only rebuilds Pages.
+
 ## Checking packets
 
 On any machine on the same network, while music plays with the visualization on screen:
