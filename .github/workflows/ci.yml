@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same container build as locally: native build and tests, then the
+      # aarch64 cross-build, ELF checks and packages.
+      - name: Build, test and package
+        run: tools/docker-build.sh all
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: visualization.wledproxy-aarch64
+          path: |
+            build-aarch64/visualization.wledproxy-*.tar.gz
+            build-aarch64/visualization.wledproxy-*.zip
+          if-no-files-found: error
