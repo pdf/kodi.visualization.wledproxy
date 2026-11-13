@@ -1,0 +1,8 @@
+<settings version="2">
+    <setting id="enabled" default="true">true</setting>
+    <setting id="count">13</setting>
+    <setting id="ratio" default="true">0.5</setting>
+    <setting id="name">caf&#233; &quot;x&quot;</setting>
+    <setting id="empty" default="true" />
+    <setting id="last_preset">Some Preset.milk</setting>
+</settings>

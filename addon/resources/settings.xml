@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+  <section id="visualization.wledproxy">
+    <category id="general" label="30000">
+      <group id="1" label="30010">
+        <setting id="target" type="addon" label="30001" help="30051">
+          <level>0</level>
+          <default>visualization.projectm</default>
+          <constraints>
+            <addontype>xbmc.player.musicviz</addontype>
+            <allowempty>false</allowempty>
+          </constraints>
+          <control type="button" format="addon"/>
+        </setting>
+        <setting id="configure_target" type="action" label="30002" help="30052">
+          <level>0</level>
+          <data>RunScript($CWD/resources/lib/configure_target.py)</data>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+      </group>
+      <group id="2" label="30011">
+        <setting id="enabled" type="boolean" label="30003" help="30053">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="destination" type="integer" label="30004" help="30054">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30020">0</option>
+              <option label="30021">1</option>
+              <option label="30022">2</option>
+            </options>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="enabled">true</dependency>
+          </dependencies>
+          <control type="list" format="string"/>
+        </setting>
+        <setting id="udp_host" type="string" label="30005" help="30055">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <dependencies>
+            <dependency type="visible" setting="destination">2</dependency>
+            <dependency type="enable" setting="enabled">true</dependency>
+          </dependencies>
+          <control type="edit" format="ip"/>
+        </setting>
+        <setting id="udp_port" type="integer" label="30006" help="30056">
+          <level>0</level>
+          <default>11988</default>
+          <constraints>
+            <minimum>1</minimum>
+            <maximum>65535</maximum>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="enabled">true</dependency>
+          </dependencies>
+          <control type="edit" format="integer"/>
+        </setting>
+      </group>
+    </category>
+  </section>
+</settings>

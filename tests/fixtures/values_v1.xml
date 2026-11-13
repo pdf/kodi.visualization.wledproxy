@@ -1,0 +1,5 @@
+<settings version="1">
+    <setting id="enabled">false</setting>
+    <setting id="count" default="true">42</setting>
+    <setting id="ratio">0.75</setting>
+</settings>

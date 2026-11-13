@@ -1,0 +1,36 @@
+# Kodi Media Center language file
+msgid ""
+msgstr ""
+"Project-Id-Version: test\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgctxt "#30000"
+msgid "General"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Quoted \"word\" and \\ backslash"
+msgstr ""
+
+msgctxt "#30002"
+msgid ""
+"Multi-line "
+"text"
+msgstr ""
+
+msgctxt "#30003"
+msgid "English"
+msgstr "Translated"
+
+#. comment line
+#: some reference
+msgctxt "#30004"
+msgid "Line\nbreak"
+msgstr ""
+
+msgid "No context"
+msgstr "ignored"
+
+msgctxt "#notanumber"
+msgid "skip"
+msgstr ""
